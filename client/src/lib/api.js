@@ -1,4 +1,16 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const getApiUrl = () => {
+  let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  url = url.trim().replace(/\/$/, '');
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = `https://${url}`;
+  }
+  if (!url.endsWith('/api')) {
+    url = `${url}/api`;
+  }
+  return url;
+};
+
+const API_URL = getApiUrl();
 
 class ApiError extends Error {
   constructor(message, status, errors = []) {

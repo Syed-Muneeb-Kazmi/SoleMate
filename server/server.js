@@ -28,8 +28,18 @@ app.use(helmet({
 }));
 
 // CORS
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map(url => url.trim().replace(/\/$/, ''))
+  : ['http://localhost:3000'];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000' || 'https://solemate-rho.vercel.app/',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
   credentials: true,
 }));
 

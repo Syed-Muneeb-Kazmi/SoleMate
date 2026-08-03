@@ -21,8 +21,11 @@ export function getImageUrl(url) {
 
   // Handle uploaded images from backend server
   if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
-    const cleanPath = url.startsWith('/') ? url : `/${url}`;
-    const baseUrl = process.env.NEXT_PUBLIC_UPLOADS_URL || 'http://localhost:5000';
+    let baseUrl = process.env.NEXT_PUBLIC_UPLOADS_URL || 'http://localhost:5000';
+    baseUrl = baseUrl.trim().replace(/\/$/, '');
+    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+      baseUrl = `https://${baseUrl}`;
+    }
     return `${baseUrl}${cleanPath}`;
   }
 

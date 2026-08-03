@@ -9,6 +9,11 @@ const nextConfig = {
         port: '5000',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'https',
+        hostname: '**.up.railway.app',
+        pathname: '/uploads/**',
+      },
     ],
     unoptimized: true,
   },
