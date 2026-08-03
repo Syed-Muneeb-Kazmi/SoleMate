@@ -1,0 +1,336 @@
+const Product = require('../models/Product');
+
+// @desc    Get all products (with filters, sort, pagination, search)
+// @route   GET /api/products
+// @access  Public
+const getProducts = async (req, res) => {
+  try {
+    const {
+      category, brand, gender, color, size,
+      minPrice, maxPrice,
+      search, sort, page = 1, limit = 12,
+      featured, newArrivals,
+    } = req.query;
+
+    const filter = {};
+
+    if (category) filter.category = category;
+    if (brand) filter.brand = { $regex: brand, $options: 'i' };
+    if (gender) filter.gender = gender;
+    if (color) filter['colors.name'] = { $regex: color, $options: 'i' };
+    if (size) filter['sizes.size'] = size;
+    if (featured === 'true') filter.isFeatured = true;
+    if (newArrivals === 'true') filter.isNewArrival = true;
+
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { brand: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { tags: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    // Sort options
+    let sortOption = { createdAt: -1 }; // default: newest
+    if (sort === 'price_asc') sortOption = { price: 1 };
+    else if (sort === 'price_desc') sortOption = { price: -1 };
+    else if (sort === 'name_asc') sortOption = { name: 1 };
+    else if (sort === 'name_desc') sortOption = { name: -1 };
+    else if (sort === 'popular') sortOption = { ratingsCount: -1 };
+    else if (sort === 'rating') sortOption = { ratingsAverage: -1 };
+
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .populate('category', 'name slug')
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Product.countDocuments(filter),
+    ]);
+
+    res.json({
+      success: true,
+      data: products,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching products',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get single product by slug
+// @route   GET /api/products/slug/:slug
+// @access  Public
+const getProductBySlug = async (req, res) => {
+  try {
+    const product = await Product.findOne({ slug: req.params.slug })
+      .populate('category', 'name slug');
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    res.json({
+      success: true,
+      data: product,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching product',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get single product by ID
+// @route   GET /api/products/:id
+// @access  Public
+const getProductById = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id)
+      .populate('category', 'name slug');
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    res.json({
+      success: true,
+      data: product,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching product',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get featured products
+// @route   GET /api/products/featured
+// @access  Public
+const getFeaturedProducts = async (req, res) => {
+  try {
+    const products = await Product.find({ isFeatured: true })
+      .populate('category', 'name slug')
+      .limit(8)
+      .lean();
+
+    res.json({
+      success: true,
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching featured products',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get new arrivals
+// @route   GET /api/products/new-arrivals
+// @access  Public
+const getNewArrivals = async (req, res) => {
+  try {
+    const products = await Product.find({ isNewArrival: true })
+      .populate('category', 'name slug')
+      .sort({ createdAt: -1 })
+      .limit(8)
+      .lean();
+
+    res.json({
+      success: true,
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching new arrivals',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Create product
+// @route   POST /api/products
+// @access  Admin
+const createProduct = async (req, res) => {
+  try {
+    const product = await Product.create(req.body);
+    await product.populate('category', 'name slug');
+
+    res.status(201).json({
+      success: true,
+      message: 'Product created successfully',
+      data: product,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error creating product',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Update product
+// @route   PUT /api/products/:id
+// @access  Admin
+const updateProduct = async (req, res) => {
+  try {
+    let product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    // Update fields
+    Object.keys(req.body).forEach(key => {
+      product[key] = req.body[key];
+    });
+
+    await product.save();
+    await product.populate('category', 'name slug');
+
+    res.json({
+      success: true,
+      message: 'Product updated successfully',
+      data: product,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating product',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Delete product
+// @route   DELETE /api/products/:id
+// @access  Admin
+const deleteProduct = async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Product deleted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error deleting product',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Upload product images
+// @route   POST /api/products/:id/images
+// @access  Admin
+const uploadProductImages = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No images uploaded',
+      });
+    }
+
+    const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+    product.images.push(...imageUrls);
+    await product.save();
+
+    res.json({
+      success: true,
+      message: 'Images uploaded successfully',
+      data: { images: product.images },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error uploading images',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get all brands (unique)
+// @route   GET /api/products/brands
+// @access  Public
+const getBrands = async (req, res) => {
+  try {
+    const brands = await Product.distinct('brand');
+    res.json({
+      success: true,
+      data: brands.sort(),
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching brands',
+      error: error.message,
+    });
+  }
+};
+
+module.exports = {
+  getProducts,
+  getProductBySlug,
+  getProductById,
+  getFeaturedProducts,
+  getNewArrivals,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  uploadProductImages,
+  getBrands,
+};
