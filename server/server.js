@@ -71,6 +71,11 @@ app.use('/api/users', userRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/contact', contactRoutes);
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ success: true, message: 'SoleMate Backend API Server is Live 🚀', health: '/api/health' });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'SoleMate API is running', timestamp: new Date().toISOString() });
