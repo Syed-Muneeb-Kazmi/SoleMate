@@ -15,6 +15,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatCurrency } from '@/lib/utils';
 import { ordersAPI } from '@/lib/api';
+import Link from 'next/link';
 
 export default function CheckoutPage() {
   const router = useRouter();
