@@ -220,9 +220,9 @@ export default function ProductCard({ product, index = 0, viewMode = 'grid' }) {
 
           {/* Price */}
           <div className="flex items-center gap-2">
-            <span className="font-heading font-bold text-base">Rs{price.toFixed(2)}</span>
-            {compareAtPrice && (
-              <span className="text-sm text-muted-foreground line-through">Rs{compareAtPrice.toFixed(2)}</span>
+            <span className="font-heading font-bold text-base">{formatCurrency(price)}</span>
+            {compareAtPrice > 0 && compareAtPrice > price && (
+              <span className="text-sm text-muted-foreground line-through">{formatCurrency(compareAtPrice)}</span>
             )}
           </div>
 

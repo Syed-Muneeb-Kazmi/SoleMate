@@ -256,7 +256,7 @@ export default function AdminDashboard() {
                       <td className="py-3 px-2 font-medium">{order.orderNumber}</td>
                       <td className="py-3 px-2">{order.user?.name || 'N/A'}</td>
                       <td className="py-3 px-2 hidden sm:table-cell">{order.items?.length || 0}</td>
-                      <td className="py-3 px-2 font-semibold">${order.total?.toFixed(2)}</td>
+                      <td className="py-3 px-2 font-semibold">{formatCurrency(order.total)}</td>
                       <td className="py-3 px-2">
                         <Badge className="text-xs capitalize" style={{ backgroundColor: STATUS_COLORS[order.orderStatus] + '20', color: STATUS_COLORS[order.orderStatus] }}>
                           {order.orderStatus}

@@ -172,7 +172,7 @@ export default function AdminOrdersPage() {
                 {detailOrder.items.map((item, i) => (
                   <div key={i} className="flex justify-between text-sm py-1 border-b border-border/30">
                     <span>{item.name} × {item.quantity} (Size {item.size})</span>
-                    <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="font-medium">{formatCurrency((item.price || 0) * (item.quantity || 0))}</span>
                   </div>
                 ))}
               </div>

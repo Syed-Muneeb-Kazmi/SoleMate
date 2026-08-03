@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { productsAPI } from '@/lib/api';
-import { getImageUrl } from '@/lib/utils';
+import { getImageUrl, formatCurrency } from '@/lib/utils';
 
 export default function AdminProductsPage() {
   const router = useRouter();
@@ -132,9 +132,9 @@ export default function AdminProductsPage() {
                           {product.category?.name || '—'}
                         </td>
                         <td className="py-3 px-4">
-                          <span className="font-semibold">${product.price.toFixed(2)}</span>
-                          {product.compareAtPrice && (
-                            <span className="text-xs text-muted-foreground line-through ml-1">${product.compareAtPrice.toFixed(2)}</span>
+                          <span className="font-semibold">{formatCurrency(product.price)}</span>
+                          {product.compareAtPrice > 0 && (
+                            <span className="text-xs text-muted-foreground line-through ml-1">{formatCurrency(product.compareAtPrice)}</span>
                           )}
                         </td>
                         <td className="py-3 px-4 hidden sm:table-cell">
