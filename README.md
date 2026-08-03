@@ -200,4 +200,4 @@ npm run dev
 
 ---
 
-**© 2024 SoleMate.** All rights reserved.
+**© 2026 SoleMate.** All rights reserved.
