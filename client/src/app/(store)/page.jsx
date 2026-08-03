@@ -36,8 +36,8 @@ export default function HomePage() {
   const [newArrivals, setNewArrivals] = useState([]);
 
   useEffect(() => {
-    productsAPI.getFeatured().then(res => setFeatured(res.data || [])).catch(() => {});
-    productsAPI.getNewArrivals().then(res => setNewArrivals(res.data || [])).catch(() => {});
+    productsAPI.getFeatured().then(res => setFeatured(Array.isArray(res?.data) ? res.data : [])).catch(() => setFeatured([]));
+    productsAPI.getNewArrivals().then(res => setNewArrivals(Array.isArray(res?.data) ? res.data : [])).catch(() => setNewArrivals([]));
   }, []);
 
   return (

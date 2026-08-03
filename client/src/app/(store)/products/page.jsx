@@ -85,7 +85,7 @@ function ProductsContent() {
         if (currentMaxPrice) params.maxPrice = currentMaxPrice;
 
         const res = await productsAPI.getAll(params);
-        setProducts(res.data || []);
+        setProducts(Array.isArray(res?.data) ? res.data : []);
         setPagination(res.pagination || {});
       } catch (error) {
         console.error('Error fetching products:', error);

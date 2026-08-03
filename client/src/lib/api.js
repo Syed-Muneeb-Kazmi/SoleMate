@@ -50,11 +50,27 @@ async function apiRequest(endpoint, options = {}) {
   }
 
   const res = await fetch(`${API_URL}${endpoint}`, config);
-  const data = await res.json();
+  let data = {};
+
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    try {
+      data = await res.json();
+    } catch {
+      data = {};
+    }
+  } else {
+    try {
+      const text = await res.text();
+      data = { message: text };
+    } catch {
+      data = {};
+    }
+  }
 
   if (!res.ok) {
     throw new ApiError(
-      data.message || 'Something went wrong',
+      data.message || `Server returned error status ${res.status}`,
       res.status,
       data.errors || []
     );
