@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/AuthContext';
+import { Logo } from '@/components/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -52,10 +53,10 @@ export default function LoginPage() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <Link href="/" className="font-heading text-3xl font-bold">
-            Sole<span className="text-accent">Mate</span>
-          </Link>
-          <p className="text-muted-foreground mt-2">Sign in to your account</p>
+          <div className="mb-4">
+            <Logo />
+          </div>
+          <p className="mt-2 font-bold text-3xl text-yellow-500">Sign in to your account</p>
         </div>
 
         <Card className="border-border/50 shadow-lg">

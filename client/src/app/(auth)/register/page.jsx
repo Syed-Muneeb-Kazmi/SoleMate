@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/AuthContext';
+import { Logo } from '@/components/Logo';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -59,8 +60,10 @@ export default function RegisterPage() {
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="font-heading text-3xl font-bold">Sole<span className="text-accent">Mate</span></Link>
-          <p className="text-muted-foreground mt-2">Create your account</p>
+          <div className="mb-4">
+            <Logo />
+          </div>
+          <p className="mt-2 font-bold text-3xl text-yellow-500">Create your account</p>
         </div>
 
         <Card className="border-border/50 shadow-lg">
@@ -70,7 +73,7 @@ export default function RegisterPage() {
                 <Label htmlFor="register-name">Full Name</Label>
                 <div className="relative mt-1.5">
                   <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="register-name" name="name" placeholder="John Doe" value={form.name} onChange={handleChange} className="pl-10" required />
+                  <Input id="register-name" name="name" placeholder="Ahmed Ali" value={form.name} onChange={handleChange} className="pl-10" required />
                 </div>
               </div>
 
