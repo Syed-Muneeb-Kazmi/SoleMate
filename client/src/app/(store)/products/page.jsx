@@ -53,10 +53,22 @@ function ProductsContent() {
   const currentMinPrice = searchParams.get('minPrice') || '';
   const currentMaxPrice = searchParams.get('maxPrice') || '';
 
+  const selectedCategories = currentCategory ? currentCategory.split(',').filter(Boolean) : [];
+  const selectedGenders = currentGender ? currentGender.split(',').filter(Boolean) : [];
+  const selectedBrands = currentBrand ? currentBrand.split(',').filter(Boolean) : [];
+  const selectedSizes = currentSize ? currentSize.split(',').filter(Boolean) : [];
+
   const [priceRange, setPriceRange] = useState([
     currentMinPrice ? parseInt(currentMinPrice) : 0,
-    currentMaxPrice ? parseInt(currentMaxPrice) : 300,
+    currentMaxPrice ? parseInt(currentMaxPrice) : 100000,
   ]);
+
+  useEffect(() => {
+    setPriceRange([
+      currentMinPrice ? parseInt(currentMinPrice) : 0,
+      currentMaxPrice ? parseInt(currentMaxPrice) : 100000,
+    ]);
+  }, [currentMinPrice, currentMaxPrice]);
 
   // Fetch categories and brands on mount
   useEffect(() => {
@@ -109,6 +121,42 @@ function ProductsContent() {
     router.push(`/products?${params.toString()}`);
   }, [searchParams, router]);
 
+  const toggleMultiFilter = useCallback((key, value) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const currentStr = params.get(key) || '';
+    const currentList = currentStr ? currentStr.split(',').filter(Boolean) : [];
+    
+    let newList;
+    if (currentList.includes(value)) {
+      newList = currentList.filter(item => item !== value);
+    } else {
+      newList = [...currentList, value];
+    }
+
+    if (newList.length > 0) {
+      params.set(key, newList.join(','));
+    } else {
+      params.delete(key);
+    }
+    params.set('page', '1');
+    router.push(`/products?${params.toString()}`);
+  }, [searchParams, router]);
+
+  const removeSingleFilterValue = useCallback((key, value) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const currentStr = params.get(key) || '';
+    const currentList = currentStr ? currentStr.split(',').filter(Boolean) : [];
+    const newList = currentList.filter(item => item !== value);
+
+    if (newList.length > 0) {
+      params.set(key, newList.join(','));
+    } else {
+      params.delete(key);
+    }
+    params.set('page', '1');
+    router.push(`/products?${params.toString()}`);
+  }, [searchParams, router]);
+
   const clearFilters = useCallback(() => {
     router.push('/products');
   }, [router]);
@@ -117,9 +165,9 @@ function ProductsContent() {
 
   // Page title
   let pageTitle = 'All Shoes';
-  if (currentGender === 'men') pageTitle = "Men's Shoes";
-  else if (currentGender === 'women') pageTitle = "Women's Shoes";
-  else if (currentGender === 'kids') pageTitle = "Kids' Shoes";
+  if (selectedGenders.length === 1 && selectedGenders[0] === 'men') pageTitle = "Men's Shoes";
+  else if (selectedGenders.length === 1 && selectedGenders[0] === 'women') pageTitle = "Women's Shoes";
+  else if (selectedGenders.length === 1 && selectedGenders[0] === 'kids') pageTitle = "Kids' Shoes";
   else if (currentSearch) pageTitle = `Results for "${currentSearch}"`;
   else if (currentFeatured) pageTitle = 'Featured Products';
   else if (currentNewArrivals) pageTitle = 'New Arrivals';
@@ -135,8 +183,8 @@ function ProductsContent() {
               {['men', 'women', 'kids', 'unisex'].map((g) => (
                 <label key={g} className="flex items-center gap-2 text-sm cursor-pointer">
                   <Checkbox
-                    checked={currentGender === g}
-                    onCheckedChange={(checked) => updateFilter('gender', checked ? g : '')}
+                    checked={selectedGenders.includes(g)}
+                    onCheckedChange={() => toggleMultiFilter('gender', g)}
                   />
                   <span className="capitalize">{g}</span>
                 </label>
@@ -149,15 +197,19 @@ function ProductsContent() {
           <AccordionTrigger className="text-sm font-semibold">Category</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
-              {categories.map((cat) => (
-                <label key={cat._id} className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Checkbox
-                    checked={currentCategory === cat._id}
-                    onCheckedChange={(checked) => updateFilter('category', checked ? cat._id : '')}
-                  />
-                  <span>{cat.name}</span>
-                </label>
-              ))}
+              {categories.map((cat) => {
+                const isChecked = selectedCategories.includes(cat.slug) || selectedCategories.includes(cat._id);
+                const valueToToggle = cat.slug || cat._id;
+                return (
+                  <label key={cat._id} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={isChecked}
+                      onCheckedChange={() => toggleMultiFilter('category', valueToToggle)}
+                    />
+                    <span>{cat.name}</span>
+                  </label>
+                );
+              })}
             </div>
           </AccordionContent>
         </AccordionItem>
@@ -169,8 +221,8 @@ function ProductsContent() {
               {brands.map((brand) => (
                 <label key={brand} className="flex items-center gap-2 text-sm cursor-pointer">
                   <Checkbox
-                    checked={currentBrand === brand}
-                    onCheckedChange={(checked) => updateFilter('brand', checked ? brand : '')}
+                    checked={selectedBrands.includes(brand)}
+                    onCheckedChange={() => toggleMultiFilter('brand', brand)}
                   />
                   <span>{brand}</span>
                 </label>
@@ -183,19 +235,22 @@ function ProductsContent() {
           <AccordionTrigger className="text-sm font-semibold">Size</AccordionTrigger>
           <AccordionContent>
             <div className="flex flex-wrap gap-2">
-              {sizeOptions.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => updateFilter('size', currentSize === size ? '' : size)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                    currentSize === size
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background border-border hover:border-primary'
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
+              {sizeOptions.map((size) => {
+                const isChecked = selectedSizes.includes(size);
+                return (
+                  <button
+                    key={size}
+                    onClick={() => toggleMultiFilter('size', size)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                      isChecked
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background border-border hover:border-primary'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                );
+              })}
             </div>
           </AccordionContent>
         </AccordionItem>
@@ -209,16 +264,16 @@ function ProductsContent() {
                 onValueChange={setPriceRange}
                 onValueCommit={(value) => {
                   updateFilter('minPrice', value[0] > 0 ? String(value[0]) : '');
-                  updateFilter('maxPrice', value[1] < 300 ? String(value[1]) : '');
+                  updateFilter('maxPrice', value[1] < 100000 ? String(value[1]) : '');
                 }}
                 min={0}
-                max={300}
-                step={10}
+                max={100000}
+                step={1000}
                 className="mb-4"
               />
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>${priceRange[0]}</span>
-                <span>${priceRange[1]}</span>
+                <span>PKR {priceRange[0].toLocaleString()}</span>
+                <span>PKR {priceRange[1].toLocaleString()}</span>
               </div>
             </div>
           </AccordionContent>
@@ -265,21 +320,30 @@ function ProductsContent() {
 
           {/* Active filter badges */}
           <div className="hidden md:flex items-center gap-2 flex-wrap">
-            {currentGender && (
-              <Badge variant="secondary" className="gap-1">
-                {currentGender} <X size={12} className="cursor-pointer" onClick={() => updateFilter('gender', '')} />
+            {selectedGenders.map(g => (
+              <Badge key={g} variant="secondary" className="gap-1 capitalize">
+                {g} <X size={12} className="cursor-pointer" onClick={() => removeSingleFilterValue('gender', g)} />
               </Badge>
-            )}
-            {currentBrand && (
-              <Badge variant="secondary" className="gap-1">
-                {currentBrand} <X size={12} className="cursor-pointer" onClick={() => updateFilter('brand', '')} />
+            ))}
+            {selectedCategories.map(c => {
+              const catObj = categories.find(cat => cat.slug === c || cat._id === c);
+              const name = catObj ? catObj.name : c;
+              return (
+                <Badge key={c} variant="secondary" className="gap-1">
+                  {name} <X size={12} className="cursor-pointer" onClick={() => removeSingleFilterValue('category', c)} />
+                </Badge>
+              );
+            })}
+            {selectedBrands.map(b => (
+              <Badge key={b} variant="secondary" className="gap-1">
+                {b} <X size={12} className="cursor-pointer" onClick={() => removeSingleFilterValue('brand', b)} />
               </Badge>
-            )}
-            {currentSize && (
-              <Badge variant="secondary" className="gap-1">
-                Size {currentSize} <X size={12} className="cursor-pointer" onClick={() => updateFilter('size', '')} />
+            ))}
+            {selectedSizes.map(s => (
+              <Badge key={s} variant="secondary" className="gap-1">
+                Size {s} <X size={12} className="cursor-pointer" onClick={() => removeSingleFilterValue('size', s)} />
               </Badge>
-            )}
+            ))}
             {activeFilterCount > 0 && (
               <button onClick={clearFilters} className="text-xs text-accent hover:underline">
                 Clear all
@@ -321,9 +385,7 @@ function ProductsContent() {
 
           <Select value={currentSort} onValueChange={(val) => updateFilter('sort', val)}>
             <SelectTrigger className="w-[190px]" id="sort-select">
-              <SelectValue placeholder="Sort by">
-                {sortOptions.find((opt) => opt.value === currentSort)?.label || 'Sort by'}
-              </SelectValue>
+              <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
               {sortOptions.map((opt) => (

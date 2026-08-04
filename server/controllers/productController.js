@@ -1,4 +1,6 @@
 const Product = require('../models/Product');
+const Category = require('../models/Category');
+const mongoose = require('mongoose');
 
 // @desc    Get all products (with filters, sort, pagination, search)
 // @route   GET /api/products
@@ -14,11 +16,65 @@ const getProducts = async (req, res) => {
 
     const filter = {};
 
-    if (category) filter.category = category;
-    if (brand) filter.brand = { $regex: brand, $options: 'i' };
-    if (gender) filter.gender = gender;
-    if (color) filter['colors.name'] = { $regex: color, $options: 'i' };
-    if (size) filter['sizes.size'] = size;
+    if (category) {
+      const catArray = category.split(',').map(c => c.trim()).filter(Boolean);
+      const allCatIds = new Set();
+
+      for (const catVal of catArray) {
+        const isValidObjectId = mongoose.Types.ObjectId.isValid(catVal);
+        let catDoc = null;
+        if (isValidObjectId) {
+          catDoc = await Category.findById(catVal);
+        }
+        if (!catDoc) {
+          catDoc = await Category.findOne({ slug: catVal });
+        }
+
+        if (catDoc) {
+          allCatIds.add(catDoc._id);
+          const subCats = await Category.find({ parent: catDoc._id }).select('_id');
+          subCats.forEach(sc => allCatIds.add(sc._id));
+        } else if (isValidObjectId) {
+          allCatIds.add(catVal);
+        }
+      }
+
+      if (allCatIds.size > 0) {
+        filter.category = { $in: Array.from(allCatIds) };
+      }
+    }
+
+    if (brand) {
+      const brandArray = brand.split(',').map(b => b.trim()).filter(Boolean);
+      if (brandArray.length > 0) {
+        filter.brand = { $in: brandArray.map(b => new RegExp(`^${b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')) };
+      }
+    }
+
+    if (gender) {
+      const genderArray = gender.split(',').map(g => g.trim()).filter(Boolean);
+      if (genderArray.length > 0) {
+        const genderSet = new Set(genderArray);
+        if (!genderSet.has('unisex') && (genderSet.has('men') || genderSet.has('women'))) {
+          genderSet.add('unisex');
+        }
+        filter.gender = { $in: Array.from(genderSet) };
+      }
+    }
+
+    if (color) {
+      const colorArray = color.split(',').map(c => c.trim()).filter(Boolean);
+      if (colorArray.length > 0) {
+        filter['colors.name'] = { $in: colorArray.map(c => new RegExp(c, 'i')) };
+      }
+    }
+
+    if (size) {
+      const sizeArray = size.split(',').map(s => s.trim()).filter(Boolean);
+      if (sizeArray.length > 0) {
+        filter['sizes.size'] = { $in: sizeArray };
+      }
+    }
     if (featured === 'true') filter.isFeatured = true;
     if (newArrivals === 'true') filter.isNewArrival = true;
 
@@ -43,8 +99,8 @@ const getProducts = async (req, res) => {
     else if (sort === 'price_desc') sortOption = { price: -1 };
     else if (sort === 'name_asc') sortOption = { name: 1 };
     else if (sort === 'name_desc') sortOption = { name: -1 };
-    else if (sort === 'popular') sortOption = { ratingsCount: -1 };
-    else if (sort === 'rating') sortOption = { ratingsAverage: -1 };
+    else if (sort === 'popular') sortOption = { ratingsCount: -1, createdAt: -1 };
+    else if (sort === 'rating') sortOption = { ratingsAverage: -1, ratingsCount: -1 };
 
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
