@@ -112,7 +112,7 @@ function AccountContent() {
                           <span className="font-medium text-sm">{order.orderNumber}</span>
                           <span className="text-xs text-muted-foreground ml-3">{new Date(order.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <Badge className={statusColors[order.orderStatus]}>{order.orderStatus}</Badge>
+                        <Badge className={`capitalize ${statusColors[order.orderStatus]}`}>{order.orderStatus}</Badge>
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {order.items.length} item(s) — <span className="font-semibold text-foreground">{formatCurrency(order.total)}</span>

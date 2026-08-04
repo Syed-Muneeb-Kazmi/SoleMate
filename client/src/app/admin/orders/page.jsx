@@ -138,8 +138,8 @@ export default function AdminOrdersPage() {
                       <td className="py-3 px-4 hidden sm:table-cell">{order.user?.name || 'Guest'}</td>
                       <td className="py-3 px-4 hidden md:table-cell">{order.items?.length}</td>
                       <td className="py-3 px-4 font-semibold">{formatCurrency(order.total)}</td>
-                      <td className="py-3 px-4"><Badge className={`text-xs ${statusColors[order.orderStatus]}`}>{order.orderStatus}</Badge></td>
-                      <td className="py-3 px-4 hidden lg:table-cell"><Badge className={`text-xs ${paymentColors[order.paymentStatus]}`}>{order.paymentStatus}</Badge></td>
+                      <td className="py-3 px-4"><Badge className={`text-xs capitalize ${statusColors[order.orderStatus]}`}>{order.orderStatus}</Badge></td>
+                      <td className="py-3 px-4 hidden lg:table-cell"><Badge className={`text-xs capitalize ${paymentColors[order.paymentStatus]}`}>{order.paymentStatus}</Badge></td>
                       <td className="py-3 px-4 text-muted-foreground hidden md:table-cell">{new Date(order.createdAt).toLocaleDateString()}</td>
                       <td className="py-3 px-4 text-right">
                         <Button variant="ghost" size="sm" onClick={() => openDetail(order)}>
@@ -202,7 +202,7 @@ export default function AdminOrdersPage() {
                 <h4 className="text-sm font-medium mb-2">Update Status</h4>
                 <div className="flex gap-2">
                   <Select value={newStatus} onValueChange={setNewStatus}>
-                    <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="flex-1"><SelectValue placeholder="Select Status" className="capitalize">{newStatus ? newStatus.charAt(0).toUpperCase() + newStatus.slice(1) : ''}</SelectValue></SelectTrigger>
                     <SelectContent>
                       {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map(s => (
                         <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>

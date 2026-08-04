@@ -385,7 +385,9 @@ function ProductsContent() {
 
           <Select value={currentSort} onValueChange={(val) => updateFilter('sort', val)}>
             <SelectTrigger className="w-[190px]" id="sort-select">
-              <SelectValue placeholder="Sort by" />
+              <SelectValue placeholder="Sort by">
+                {sortOptions.find((opt) => opt.value === currentSort)?.label || 'Sort by'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {sortOptions.map((opt) => (
