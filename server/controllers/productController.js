@@ -243,6 +243,22 @@ const getNewArrivals = async (req, res) => {
 // @access  Admin
 const createProduct = async (req, res) => {
   try {
+    if (!req.body.category) {
+      return res.status(400).json({
+        success: false,
+        message: 'Category is required',
+        error: 'Please select a valid category for the product.',
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(req.body.category)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Category ID',
+        error: `The category ID "${req.body.category}" is not valid.`,
+      });
+    }
+
     const product = await Product.create(req.body);
     await product.populate('category', 'name slug');
 
@@ -252,6 +268,16 @@ const createProduct = async (req, res) => {
       data: product,
     });
   } catch (error) {
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation Error',
+        error: messages.join(', '),
+        errors: messages,
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Server error creating product',

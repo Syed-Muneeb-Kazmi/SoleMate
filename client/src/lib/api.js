@@ -69,8 +69,13 @@ async function apiRequest(endpoint, options = {}) {
   }
 
   if (!res.ok) {
+    const errorDetail = data.error || (Array.isArray(data.errors) ? data.errors.join(', ') : '');
+    const errorMessage = data.message && errorDetail && data.message !== errorDetail
+      ? `${data.message} — ${errorDetail}`
+      : (data.message || errorDetail || `Server returned error status ${res.status}`);
+
     throw new ApiError(
-      data.message || `Server returned error status ${res.status}`,
+      errorMessage,
       res.status,
       data.errors || []
     );
