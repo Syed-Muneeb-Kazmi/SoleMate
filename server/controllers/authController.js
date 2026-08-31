@@ -210,7 +210,8 @@ const forgotPassword = async (req, res) => {
 
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
     try {
       await sendEmail({
@@ -237,7 +238,8 @@ const forgotPassword = async (req, res) => {
       console.error('Reset email send failed:', emailError);
       return res.status(500).json({
         success: false,
-        message: 'Something went wrong while sending the reset email.',
+        message: 'Failed to send reset password email.',
+        error: emailError.message,
       });
     }
 

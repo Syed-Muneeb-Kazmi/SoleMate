@@ -2,25 +2,57 @@
 const nodemailer = require('nodemailer');
 
 const sendEmail = async ({ to, subject, html }) => {
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    requireTLS: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 20000,
-  });
+  const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const rawPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || '';
+  const emailPass = rawPass.replace(/\s+/g, ''); // Strip spaces from App Passwords
+
+  if (!emailUser || !emailPass) {
+    throw new Error(
+      'Email configuration missing: EMAIL_USER and EMAIL_PASS environment variables must be set on the server.'
+    );
+  }
+
+  let transporter;
+
+  if (process.env.SMTP_HOST) {
+    // Custom SMTP setup (e.g. SendGrid, Brevo, AWS SES, Mailgun)
+    const isSecure = process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465';
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT, 10) || (isSecure ? 465 : 587),
+      secure: isSecure,
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
+    });
+  } else {
+    // Gmail Service transport (bypasses port 587 cloud firewall blocks)
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
+    });
+  }
+
+  const fromAddress = process.env.EMAIL_FROM || `"SoleMate" <${emailUser}>`;
 
   const info = await transporter.sendMail({
-    from: `"SoleMate" <${process.env.EMAIL_USER}>`,
+    from: fromAddress,
     to,
     subject,
     html,
