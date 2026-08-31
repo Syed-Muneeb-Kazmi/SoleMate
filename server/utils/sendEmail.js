@@ -9,10 +9,6 @@ try {
   // Fallback for older Node versions
 }
 
-const ipv4Lookup = (hostname, options, callback) => {
-  return dns.lookup(hostname, { ...options, family: 4 }, callback);
-};
-
 const sendEmail = async ({ to, subject, html }) => {
   const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER;
   const rawPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || '';
@@ -24,40 +20,55 @@ const sendEmail = async ({ to, subject, html }) => {
     );
   }
 
+  const targetHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+  let connectHost = targetHost;
+
+  // Dynamically resolve IPv4 address to bypass Railway container IPv6 ENETUNREACH issues
+  try {
+    const ipv4Addresses = await dns.promises.resolve4(targetHost);
+    if (ipv4Addresses && ipv4Addresses.length > 0) {
+      connectHost = ipv4Addresses[0];
+    }
+  } catch (dnsErr) {
+    console.warn(`IPv4 resolution warning for ${targetHost}:`, dnsErr.message);
+  }
+
   let transporter;
 
   if (process.env.SMTP_HOST) {
     // Custom SMTP setup (e.g. SendGrid, Brevo, AWS SES, Mailgun)
     const isSecure = process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465';
     transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
+      host: connectHost,
       port: parseInt(process.env.SMTP_PORT, 10) || (isSecure ? 465 : 587),
       secure: isSecure,
-      lookup: ipv4Lookup,
+      servername: targetHost,
       auth: {
         user: emailUser,
         pass: emailPass,
       },
       tls: {
         rejectUnauthorized: false,
+        servername: targetHost,
       },
       connectionTimeout: 15000,
       greetingTimeout: 15000,
       socketTimeout: 20000,
     });
   } else {
-    // Gmail Transport over SSL port 465 (IPv4 forced via lookup)
+    // Gmail Transport over SSL port 465 (IPv4 direct connection with SNI)
     transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
+      host: connectHost,
       port: 465,
       secure: true,
-      lookup: ipv4Lookup,
+      servername: 'smtp.gmail.com',
       auth: {
         user: emailUser,
         pass: emailPass,
       },
       tls: {
         rejectUnauthorized: false,
+        servername: 'smtp.gmail.com',
       },
       connectionTimeout: 15000,
       greetingTimeout: 15000,
