@@ -235,10 +235,15 @@ const forgotPassword = async (req, res) => {
         `,
       });
     } catch (emailError) {
+      // Clean up the saved reset token since the email failed to send
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
       console.error('Reset email send failed:', emailError);
       return res.status(500).json({
         success: false,
-        message: 'Failed to send reset password email.',
+        message: 'Failed to send reset password email. Please try again later.',
         error: emailError.message,
       });
     }
@@ -248,6 +253,7 @@ const forgotPassword = async (req, res) => {
       message: 'If an account exists, a reset link has been sent.',
     });
   } catch (error) {
+    console.error('forgotPassword error:', error);
     res.status(500).json({
       success: false,
       message: 'Something went wrong while sending the reset email.',

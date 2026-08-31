@@ -1,12 +1,8 @@
 const getApiUrl = () => {
-  let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-  url = url.trim().replace(/\/$/, '');
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = `https://${url}`;
-  }
-  if (!url.endsWith('/api')) {
-    url = `${url}/api`;
-  }
+  // Use the env var directly. It must already be the full API base URL
+  // (e.g. https://solemate-production-55b6.up.railway.app/api).
+  // We only strip a trailing slash to avoid double-slash in requests.
+  const url = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').trim().replace(/\/$/, '');
   return url;
 };
 
