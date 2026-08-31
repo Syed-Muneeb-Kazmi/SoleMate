@@ -8,7 +8,11 @@
     "dev": "nodemon server.js",
     "seed": "node seed/seed.js"
   },
-  "keywords": ["ecommerce", "footwear", "api"],
+  "keywords": [
+    "ecommerce",
+    "footwear",
+    "api"
+  ],
   "author": "SoleMate",
   "license": "ISC",
   "dependencies": {
@@ -18,10 +22,11 @@
     "express": "^4.21.0",
     "express-rate-limit": "^7.4.0",
     "express-validator": "^7.2.0",
+    "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.7.0",
     "multer": "^1.4.5-lts.1",
-    "helmet": "^8.0.0",
+    "nodemailer": "^9.0.6",
     "slugify": "^1.6.6"
   },
   "devDependencies": {

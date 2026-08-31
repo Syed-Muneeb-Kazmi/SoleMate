@@ -190,41 +190,47 @@ const updatePassword = async (req, res) => {
 // @desc    Forgot password — generate reset token
 // @route   POST /api/auth/forgot-password
 // @access  Public
+const sendEmail = require('../utils/sendEmail');
+
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {
-      // Don't reveal whether email exists — still return success
-      return res.json({
+      return res.status(200).json({
         success: true,
-        message: 'If an account with that email exists, a password reset link has been generated',
+        message: 'If an account exists, a reset link has been sent.',
       });
     }
 
-    // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-    user.resetPasswordExpire = Date.now() + 30 * 60 * 1000; // 30 minutes
+    user.resetPasswordExpire = Date.now() + 30 * 60 * 1000;
 
     await user.save({ validateBeforeSave: false });
 
-    // In a real app, send this via email. For now, return the token in response.
-    // The reset URL would be: ${CLIENT_URL}/reset-password/${resetToken}
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-    res.json({
+    await sendEmail({
+      to: user.email,
+      subject: 'Reset your SoleMate password',
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>Click the link below to reset your password:</p>
+        <a href="${resetUrl}">${resetUrl}</a>
+        <p>This link expires in 30 minutes.</p>
+      `,
+    });
+
+    return res.status(200).json({
       success: true,
-      message: 'If an account with that email exists, a password reset link has been generated',
-      // NOTE: In production, remove resetUrl from response and send via email instead
-      resetUrl,
-      resetToken,
+      message: 'If an account exists, a reset link has been sent.',
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Server error processing forgot password',
+      message: 'Something went wrong while sending the reset email.',
       error: error.message,
     });
   }
@@ -238,7 +244,6 @@ const resetPassword = async (req, res) => {
     const { password } = req.body;
     const { token } = req.params;
 
-    // Hash the token from URL to compare with stored hash
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await User.findOne({
@@ -253,29 +258,20 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    // Set new password
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
+
     await user.save();
 
-    const jwtToken = generateToken(user._id);
-
-    res.json({
+    return res.status(200).json({
       success: true,
       message: 'Password reset successful',
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        token: jwtToken,
-      },
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Server error resetting password',
+      message: 'Error resetting password',
       error: error.message,
     });
   }

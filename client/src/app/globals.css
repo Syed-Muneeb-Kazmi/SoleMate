@@ -194,12 +194,43 @@
 }
 
 /* ─── Animation Respect for Reduced Motion ─────────── */
+@keyframes product-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.product-marquee-track {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  animation: product-marquee 28s linear infinite;
+  will-change: transform;
+  gap: 1rem;
+}
+
+.product-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.product-marquee-item {
+  flex: 0 0 auto;
+  width: min(100vw - 2.5rem, 260px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .product-marquee-track {
+    animation: none;
   }
 }
 

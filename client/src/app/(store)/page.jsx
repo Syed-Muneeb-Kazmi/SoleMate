@@ -31,6 +31,11 @@ const testimonials = [
   { name: 'David K.', rating: 5, text: 'Got my kids the Little Explorer and they haven\'t taken them off since! Great quality and super easy velcro straps.', role: 'Parent of Two' },
 ];
 
+const buildMarqueeProducts = (products, maxItems = 8) => {
+  const items = Array.isArray(products) ? products.slice(0, maxItems) : [];
+  return [...items, ...items];
+};
+
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
@@ -128,10 +133,14 @@ export default function HomePage() {
               </div>
             </ScrollReveal>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {featured.slice(0, 8).map((product, i) => (
-                <ProductCard key={product._id} product={product} index={i} />
-              ))}
+            <div className="overflow-hidden">
+              <div className="product-marquee-track">
+                {buildMarqueeProducts(featured, 8).map((product, i) => (
+                  <div key={`${product._id}-${i}`} className="product-marquee-item">
+                    <ProductCard product={product} index={i} />
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="mt-8 text-center md:hidden">
@@ -199,10 +208,14 @@ export default function HomePage() {
               </div>
             </ScrollReveal>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {newArrivals.slice(0, 8).map((product, i) => (
-                <ProductCard key={product._id} product={product} index={i} />
-              ))}
+            <div className="overflow-hidden">
+              <div className="product-marquee-track">
+                {buildMarqueeProducts(newArrivals, 8).map((product, i) => (
+                  <div key={`${product._id}-${i}`} className="product-marquee-item">
+                    <ProductCard product={product} index={i} />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
