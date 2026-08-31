@@ -9,6 +9,10 @@ try {
   // Fallback for older Node versions
 }
 
+const ipv4Lookup = (hostname, options, callback) => {
+  return dns.lookup(hostname, { ...options, family: 4 }, callback);
+};
+
 const sendEmail = async ({ to, subject, html }) => {
   const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER;
   const rawPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || '';
@@ -29,6 +33,7 @@ const sendEmail = async ({ to, subject, html }) => {
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT, 10) || (isSecure ? 465 : 587),
       secure: isSecure,
+      lookup: ipv4Lookup,
       auth: {
         user: emailUser,
         pass: emailPass,
@@ -41,11 +46,12 @@ const sendEmail = async ({ to, subject, html }) => {
       socketTimeout: 20000,
     });
   } else {
-    // Gmail Transport over SSL port 465 (IPv4 forced via dns setting)
+    // Gmail Transport over SSL port 465 (IPv4 forced via lookup)
     transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 465,
       secure: true,
+      lookup: ipv4Lookup,
       auth: {
         user: emailUser,
         pass: emailPass,
