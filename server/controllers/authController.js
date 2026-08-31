@@ -212,16 +212,34 @@ const forgotPassword = async (req, res) => {
 
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-    await sendEmail({
-      to: user.email,
-      subject: 'Reset your SoleMate password',
-      html: `
-        <h2>Password Reset Request</h2>
-        <p>Click the link below to reset your password:</p>
-        <a href="${resetUrl}">${resetUrl}</a>
-        <p>This link expires in 30 minutes.</p>
-      `,
-    });
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Reset your SoleMate password',
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+            <h2 style="margin-bottom: 12px;">Password Reset Request</h2>
+            <p>Hello,</p>
+            <p>We received a request to reset your password.</p>
+            <p>
+              <a href="${resetUrl}" style="display: inline-block; padding: 10px 16px; background: #d4a853; color: #111827; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                Reset Password
+              </a>
+            </p>
+            <p>Or copy this link into your browser:</p>
+            <p>${resetUrl}</p>
+            <p>This link will expire in 30 minutes.</p>
+            <p>If you did not request this, you can ignore this email.</p>
+          </div>
+        `,
+      });
+    } catch (emailError) {
+      console.error('Reset email send failed:', emailError);
+      return res.status(500).json({
+        success: false,
+        message: 'Something went wrong while sending the reset email.',
+      });
+    }
 
     return res.status(200).json({
       success: true,
