@@ -1,5 +1,13 @@
 // server/utils/sendEmail.js
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// Force Node.js DNS to prefer IPv4 (fixes ENETUNREACH IPv6 errors on Railway/cloud platforms)
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch (e) {
+  // Fallback for older Node versions
+}
 
 const sendEmail = async ({ to, subject, html }) => {
   const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER;
@@ -33,9 +41,11 @@ const sendEmail = async ({ to, subject, html }) => {
       socketTimeout: 20000,
     });
   } else {
-    // Gmail Service transport (bypasses port 587 cloud firewall blocks)
+    // Gmail Transport over SSL port 465 (IPv4 forced via dns setting)
     transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       auth: {
         user: emailUser,
         pass: emailPass,
